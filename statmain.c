@@ -18,15 +18,19 @@
 #include "statmain.h"
 #include <strings.h>
 #include <stdlib.h>
+#include "decode_head.h"
+#include "tcp_decode.h"
 
 #define MEMFILE  "/var/run/.memfile" 
 #define STATS_DIR "/var/log/protostats/minute/"
 #define DETECTED_PROTO_NUM 80000 
 
+#if 0
 StrMap *ipPortMap ;
 StrMap *proIdMap ;
 StrMap *idProMap ;
 StrintMap *ipdataMap =NULL;
+#endif
 char net_range[64];
 uint32_t ipstart;
 uint32_t ipend;
@@ -42,6 +46,7 @@ time_t timev;
 
 #define DEVICE_NUM_MAX 32
 
+#if 0
 struct proto_port {
 	char protoname[64];
 	int protowithport;
@@ -50,13 +55,16 @@ struct proto_port {
 struct Stats ip0[16];
 
 struct proto_port pport[256];
+#endif
 
 static pcap_t *pd;
 
+#if 0
 struct ipport_pro {
 	char ipport[12];
 	char proto[16];
 };
+#endif
 
 int DataLink;
 int IP_Offset;
@@ -67,6 +75,7 @@ int parse_confile()
 	if ((fp = fopen(configfile, "r")) == NULL) 
 		return -1;
 
+		printf("statemain:line:%d\n",__LINE__);
 	char buf[64];
 	char *str_proto;
 	char *str_flag;
@@ -188,6 +197,7 @@ int parse_confile()
 		}
 		i++;
 	}
+	printf("proto_num:%d\n",proto_num);
 	return 0;
 }
 
@@ -345,6 +355,11 @@ void smint_iter(const StrintMap *map)
 				if (pair->value.stats[k].protoid == 0) {
 					fprintf(fp, "%llu|", pair->value.stats[k].recvsize);
 					fprintf(fp, "%llu|", pair->value.stats[k].sendsize);
+					fprintf(fp, "%llu|", pair->value.stats[k].newconn);
+					fprintf(fp, "%llu|", pair->value.stats[k].existconn);
+					//add by njl
+					//pair->value.stats[k].recvsize = 0;
+					//pair->value.stats[k].sendsize = 0;
 					//fprintf(fp, "%s", pname);
 
 					continue;
@@ -353,6 +368,18 @@ void smint_iter(const StrintMap *map)
 				//printf("tmp: %s\n", tmp);
 				fprintf(fp, "%llu|", pair->value.stats[k].recvsize);
 				fprintf(fp, "%llu|", pair->value.stats[k].sendsize);
+				fprintf(fp, "%llu|", pair->value.stats[k].newconn);
+				fprintf(fp, "%llu|", pair->value.stats[k].existconn);
+				fprintf(fp, "%llu|", pair->value.stats[k].accesstimes);
+				//add by njl
+				pair->value.stats[k].recvsize = 0;
+				pair->value.stats[k].sendsize = 0;
+				pair->value.stats[k].newconn = 0;
+				pair->value.stats[k].accesstimes = 0;
+				if(pair->value.stats[k].existconn == 0){
+					bucket->count -= 1;
+					free(pair);
+				}
 				//fprintf(fp, "%s", pname);
 
 				/*for debug*/
@@ -407,8 +434,8 @@ void PacketCallback(u_char *user, const struct pcap_pkthdr *h, const u_char *p)
 	uint32_t srcip;
 	uint32_t dstip;
 
-	p += IP_Offset; 
-	ip = (const struct ip *)p;
+	//p += IP_Offset; 
+	ip = (const struct ip *)(p+IP_Offset);
 
 	uint64_t size;
 	size = h->len;
@@ -420,13 +447,14 @@ void PacketCallback(u_char *user, const struct pcap_pkthdr *h, const u_char *p)
 
 	if (gflag == 1) {
 		printf("11111\n");
-     	memset(ipdataMap->buckets, 0, ipdataMap->count * sizeof(Bucketint));
+     	//memset(ipdataMap->buckets, 0, ipdataMap->count * sizeof(Bucketint));
 		ip0flag = 1;
 		gflag = 0;
 	} 
 
 	srcip = ntohl(*(uint32_t *) (&ip->ip_src));
 	dstip = ntohl(*(uint32_t *) (&ip->ip_dst));
+
 
 	char strid[8];
 
@@ -443,6 +471,8 @@ void PacketCallback(u_char *user, const struct pcap_pkthdr *h, const u_char *p)
 		case 6:    
 			if (sm_get(proIdMap, "tcp", strid, sizeof(strid)) ==1) {
 				//todo:
+			//	printf("fun:%s,line:%d,strid:%s\n",__FUNCTION__,__LINE__,strid);
+				tcp_packet_decode(p,h->len);
 			}
 
 			break;
