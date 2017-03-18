@@ -378,7 +378,8 @@ void smint_iter(const StrintMap *map)
 				pair->value.stats[k].accesstimes = 0;
 				if(pair->value.stats[k].existconn == 0){
 					bucket->count -= 1;
-					free(pair);
+					memset(pair,0,sizeof(Pairint));
+					//free(pair);
 				}
 				//fprintf(fp, "%s", pname);
 
