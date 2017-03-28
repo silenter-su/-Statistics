@@ -9,8 +9,6 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <time.h>
-#include "strintmap.h"
-#include "strmap.h"
 #include "tcp_decode.h"
 
 
