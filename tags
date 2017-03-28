@@ -1,0 +1,191 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.8	//
+BDSTATLIB	Makefile	/^BDSTATLIB = -lpcap -lpthread$/;"	m
+Bucket	strmap.h	/^struct Bucket {$/;"	s
+Bucket	strmap.h	/^typedef struct Bucket Bucket;$/;"	t	typeref:struct:Bucket
+BucketSession	sessionmap.h	/^struct BucketSession {$/;"	s
+BucketSession	sessionmap.h	/^typedef struct BucketSession BucketSession;$/;"	t	typeref:struct:BucketSession
+Bucketint	strintmap.h	/^struct Bucketint {$/;"	s
+Bucketint	strintmap.h	/^typedef struct Bucketint Bucketint;$/;"	t	typeref:struct:Bucketint
+DETECTED_PROTO_NUM	statmain.c	26;"	d	file:
+DEVICE_NUM_MAX	statmain.c	48;"	d	file:
+DataLink	statmain.c	/^int DataLink;$/;"	v
+ENTHERNET_TYPE_IP	tcp_decode.h	28;"	d
+ExistConnCount	udp_decode.c	/^void* ExistConnCount(void *arg)$/;"	f
+ICMP_HEADER_LEN	tcp_decode.h	16;"	d
+ICMP_NORMAL_LEN	tcp_decode.h	17;"	d
+ICMP_TIME	udp_decode.h	8;"	d
+INCLUDES	Makefile	/^INCLUDES = $/;"	m
+INCR_100	udp_decode.h	5;"	d
+IPData	strintmap.h	/^struct IPData {$/;"	s
+IPSession	sessionmap.h	/^} IPSession;$/;"	t	typeref:struct:IPSession_
+IPSession_	sessionmap.h	/^typedef struct IPSession_ {$/;"	s
+IP_DF	tcp_decode.h	24;"	d
+IP_HEADER_LEN	tcp_decode.h	13;"	d
+IP_HL	tcp_decode.h	42;"	d
+IP_MF	tcp_decode.h	25;"	d
+IP_Offset	statmain.c	/^int IP_Offset;$/;"	v
+IP_RF	tcp_decode.h	23;"	d
+IP_V	tcp_decode.h	43;"	d
+MEMFILE	statmain.c	24;"	d	file:
+OBJECTS	Makefile	/^OBJECTS = statmain.o tcp_decode.o strintmap.o strmap.o$/;"	m
+OFFMASK	tcp_decode.h	26;"	d
+PacketCallback	statmain.c	/^void PacketCallback(u_char *user, const struct pcap_pkthdr *h, const u_char *p)$/;"	f
+Pair	strmap.h	/^struct Pair {$/;"	s
+Pair	strmap.h	/^typedef struct Pair Pair;$/;"	t	typeref:struct:Pair
+PairSession	sessionmap.h	/^struct PairSession {$/;"	s
+PairSession	sessionmap.h	/^typedef struct PairSession PairSession;$/;"	t	typeref:struct:PairSession
+Pairint	strintmap.h	/^struct Pairint {$/;"	s
+Pairint	strintmap.h	/^typedef struct Pairint Pairint;$/;"	t	typeref:struct:Pairint
+SIZE_ETHERNET	tcp_decode.h	20;"	d
+SNAP_LEN	tcp_decode.h	19;"	d
+STATS_DIR	statmain.c	25;"	d	file:
+SessionMap	sessionmap.h	/^struct SessionMap {$/;"	s
+SessionMap	sessionmap.h	/^typedef struct SessionMap SessionMap;$/;"	t	typeref:struct:SessionMap
+SetExistconn	udp_decode.c	/^void SetExistconn(unsigned int key,IPSession value,const void *obj)$/;"	f
+Stats	strintmap.h	/^struct Stats {$/;"	s
+StrMap	strmap.h	/^struct StrMap {$/;"	s
+StrMap	strmap.h	/^typedef struct StrMap StrMap;$/;"	t	typeref:struct:StrMap
+StrintMap	strintmap.h	/^struct StrintMap {$/;"	s
+StrintMap	strintmap.h	/^typedef struct StrintMap StrintMap;$/;"	t	typeref:struct:StrintMap
+TARGET	Makefile	/^TARGET = bdstat$/;"	m
+TCP_HEADER_LEN	tcp_decode.h	14;"	d
+TH_OFF	tcp_decode.h	44;"	d
+UDP_HEADER_LEN	tcp_decode.h	15;"	d
+UDP_TIME	udp_decode.h	7;"	d
+UDP_TIMEOUT	udp_decode.h	6;"	d
+UDPstatusMap	statmain.c	/^SessionMap *UDPstatusMap = NULL;$/;"	v
+_GNU_SOURCE	statmain.h	3;"	d
+_PACKETSTATS_H_	statmain.h	2;"	d
+_SESSION_MAP_H_	sessionmap.h	38;"	d
+_STRINTMAP_H_	strintmap.h	38;"	d
+_STRMAP_H_	strmap.h	38;"	d
+__TCP_DECODE_H__	tcp_decode.h	2;"	d
+__UDP_DECODE_H__	udp_decode.h	2;"	d
+accesstimes	strintmap.h	/^	uint32_t	accesstimes;$/;"	m	struct:Stats
+add_ipdata	tcp_decode.c	/^void add_ipdata(uint32_t ip,struct packet_statistic stat,uint16_t protoid,int flag)$/;"	f
+add_ipdata_acc	udp_decode.c	/^void  add_ipdata_acc(u_int32_t ip, u_int64_t size, u_int16_t protoid, int flag)$/;"	f
+add_ipdata_exist_num	udp_decode.c	/^void  add_ipdata_exist_num(u_int32_t ip, u_int16_t protoid,unsigned int exist_num)$/;"	f
+add_ipdata_pro	udp_decode.c	/^void  add_ipdata_pro(u_int32_t ip, u_int64_t size, u_int16_t protoid, int flag)$/;"	f
+buckets	sessionmap.h	/^	BucketSession *buckets;$/;"	m	struct:SessionMap
+buckets	strintmap.h	/^	Bucketint *buckets;$/;"	m	struct:StrintMap
+buckets	strmap.h	/^	Bucket *buckets;$/;"	m	struct:StrMap
+capacity	sessionmap.h	/^	unsigned int capacity; \/* 通过malloc,realloc,来分配,一次增长量为宏INCR(increment) *\/$/;"	m	struct:IPSession_
+check_close_connect	tcp_decode.c	/^static int check_close_connect(struct tcphdr *tcphead)$/;"	f	file:
+check_file	statmain.c	/^char *check_file()$/;"	f
+check_new_connect	tcp_decode.c	/^static int check_new_connect(struct tcphdr *tcphead)$/;"	f	file:
+close	tcp_decode.h	/^	uint8_t		close;			\/\/标识数据包是滞为tcp断开连接数据包：1-断开连接，0-正常数据包$/;"	m	struct:packet_statistic
+configfile	statmain.c	/^char *configfile; $/;"	v
+configflag	statmain.c	/^int configflag;$/;"	v
+connect	tcp_decode.h	/^	uint8_t		connect;		\/\/标识数据包是否为tcp新连接数据包：1-新连接，0-正常数据包$/;"	m	struct:packet_statistic
+count	sessionmap.h	/^	unsigned int count;$/;"	m	struct:BucketSession
+count	sessionmap.h	/^	unsigned int count;$/;"	m	struct:SessionMap
+count	strintmap.h	/^	unsigned int count;$/;"	m	struct:Bucketint
+count	strintmap.h	/^	unsigned int count;$/;"	m	struct:StrintMap
+count	strmap.h	/^	unsigned int count;$/;"	m	struct:Bucket
+count	strmap.h	/^	unsigned int count;$/;"	m	struct:StrMap
+dstip	sessionmap.h	/^	unsigned int dstip;$/;"	m	struct:session_info_
+dstport	sessionmap.h	/^	unsigned short dstport;$/;"	m	struct:session_info_
+existconn	strintmap.h	/^	uint32_t	existconn;$/;"	m	struct:Stats
+file	statmain.c	/^char file[256]; $/;"	v
+filen	statmain.c	/^	int filen;$/;"	v
+funciter	statmain.c	/^void funciter(char *key, char *value, void *data)$/;"	f
+g_daemon	statmain.c	/^int g_daemon ;$/;"	v
+get_pair	sessionmap.c	/^static PairSession * get_pair(BucketSession *bucket, unsigned int key)$/;"	f	file:
+get_pair	strintmap.c	/^static Pairint * get_pair(Bucketint *bucket, unsigned int key)$/;"	f	file:
+get_pair	strmap.c	/^static Pair * get_pair(Bucket *bucket, const char *key)$/;"	f	file:
+gflag	statmain.c	/^int gflag;$/;"	v
+hash	sessionmap.c	/^static unsigned long hash(unsigned int key)$/;"	f	file:
+hash	strintmap.c	/^static unsigned long hash(unsigned int key)$/;"	f	file:
+hash	strmap.c	/^static unsigned long hash(const char *str)$/;"	f	file:
+idProMap	statmain.c	/^StrMap *idProMap ;$/;"	v
+ifdevice	statmain.c	/^char *ifdevice[32];$/;"	v
+ifname	statmain.c	/^char ifname[256];$/;"	v
+init_ipdataMap	statmain.c	/^void init_ipdataMap ()$/;"	f
+intoaV4	statmain.c	/^char* intoaV4(unsigned int addr, char* buf, u_short bufLen)$/;"	f
+ip0	statmain.c	/^struct Stats ip0[16];$/;"	v	typeref:struct:Stats
+ip0flag	statmain.c	/^int ip0flag;$/;"	v
+ipPortMap	statmain.c	/^StrMap *ipPortMap ;$/;"	v
+ipaddr	strintmap.h	/^	uint32_t	ipaddr;$/;"	m	struct:IPData
+ipdataMap	statmain.c	/^StrintMap *ipdataMap =NULL;$/;"	v
+ipend	statmain.c	/^uint32_t ipend;$/;"	v
+ipport	statmain.c	/^	char ipport[12];$/;"	m	struct:ipport_pro	file:
+ipport_pro	statmain.c	/^struct ipport_pro {$/;"	s	file:
+ipstart	statmain.c	/^uint32_t ipstart;$/;"	v
+key	sessionmap.h	/^	unsigned int key;$/;"	m	struct:PairSession
+key	strintmap.h	/^	unsigned int key;$/;"	m	struct:Pairint
+key	strmap.h	/^	char *key;$/;"	m	struct:Pair
+main	statmain.c	/^int main(int argc, char **argv)$/;"	f
+mapiter	statmain.c	/^void mapiter(char *key, char *value, void *data)$/;"	f
+net_range	statmain.c	/^char net_range[64];$/;"	v
+newconn	strintmap.h	/^	uint32_t	newconn;$/;"	m	struct:Stats
+packet_size	tcp_decode.h	/^	uint16_t	packet_size;	\/\/数据包的大小$/;"	m	struct:packet_statistic
+packet_statistic	tcp_decode.h	/^struct packet_statistic{$/;"	s
+pairs	sessionmap.h	/^	PairSession *pairs;$/;"	m	struct:BucketSession
+pairs	strintmap.h	/^	Pairint *pairs;$/;"	m	struct:Bucketint
+pairs	strmap.h	/^	Pair *pairs;$/;"	m	struct:Bucket
+parse_args	statmain.c	/^int parse_args(int argc, char **argv)$/;"	f
+parse_confile	statmain.c	/^int parse_confile()$/;"	f
+pd	statmain.c	/^static pcap_t *pd;$/;"	v	file:
+port	statmain.c	/^	char port[128];$/;"	m	struct:proto_port	file:
+pport	statmain.c	/^struct proto_port pport[256];$/;"	v	typeref:struct:proto_port
+proIdMap	statmain.c	/^StrMap *proIdMap ;$/;"	v
+proto	statmain.c	/^	char proto[16];$/;"	m	struct:ipport_pro	file:
+proto_num	statmain.c	/^int proto_num;$/;"	v
+proto_port	statmain.c	/^struct proto_port {$/;"	s	file:
+protoid	strintmap.h	/^	uint16_t    protoid;$/;"	m	struct:Stats
+protoname	statmain.c	/^	char protoname[64];$/;"	m	struct:proto_port	file:
+protowithport	statmain.c	/^	int protowithport;$/;"	m	struct:proto_port	file:
+recvsize	strintmap.h	/^	uint64_t	recvsize;$/;"	m	struct:Stats
+sendsize	strintmap.h	/^	uint64_t	sendsize;$/;"	m	struct:Stats
+session_count	sessionmap.h	/^	unsigned int session_count; \/* 记录当前有多少会话 *\/$/;"	m	struct:IPSession_
+session_info	sessionmap.h	/^} session_info;$/;"	t	typeref:struct:session_info_
+session_info_	sessionmap.h	/^typedef struct session_info_ {$/;"	s
+sessions	sessionmap.h	/^	session_info *sessions;$/;"	m	struct:IPSession_
+sm_delete	strmap.c	/^void sm_delete(StrMap *map)$/;"	f
+sm_enum	strmap.c	/^int sm_enum(const StrMap *map, sm_enum_func enum_func, const void *obj)$/;"	f
+sm_enum_func	strmap.h	/^typedef void(*sm_enum_func)(const char *key, const char *value, const void *obj);$/;"	t
+sm_exists	strmap.c	/^int sm_exists(const StrMap *map, const char *key)$/;"	f
+sm_get	strmap.c	/^int sm_get(const StrMap *map, const char *key, char *out_buf, unsigned int n_out_buf)$/;"	f
+sm_get_count	strmap.c	/^int sm_get_count(const StrMap *map)$/;"	f
+sm_new	strmap.c	/^StrMap * sm_new(unsigned int capacity)$/;"	f
+sm_put	strmap.c	/^int sm_put(StrMap *map, const char *key, const char *value)$/;"	f
+smint_delete	strintmap.c	/^void smint_delete(StrintMap *map)$/;"	f
+smint_enum	strintmap.c	/^int smint_enum(const StrintMap *map, smint_enum_func enum_func, const void *obj)$/;"	f
+smint_enum_func	strintmap.h	/^typedef void(*smint_enum_func)(unsigned int key, const struct IPData value, const void *obj);$/;"	t
+smint_exists	strintmap.c	/^int smint_exists(const StrintMap *map, unsigned int key)$/;"	f
+smint_get	strintmap.c	/^int smint_get(const StrintMap *map, unsigned int key, struct IPData *out_buf)$/;"	f
+smint_get_count	strintmap.c	/^int smint_get_count(const StrintMap *map)$/;"	f
+smint_iter	statmain.c	/^void smint_iter(const StrintMap *map)$/;"	f
+smint_new	strintmap.c	/^StrintMap* smint_new(unsigned int capacity)$/;"	f
+smint_put	strintmap.c	/^int smint_put(StrintMap *map, unsigned int key, const struct IPData value)$/;"	f
+srcip	sessionmap.h	/^	unsigned int srcip;$/;"	m	struct:session_info_
+srcport	sessionmap.h	/^	unsigned short srcport;$/;"	m	struct:session_info_
+ssm_delete	sessionmap.c	/^void ssm_delete(SessionMap *map)$/;"	f
+ssm_enum	sessionmap.c	/^int ssm_enum(const SessionMap *map, ssm_enum_func enum_func, const void *obj)$/;"	f
+ssm_enum_func	sessionmap.h	/^typedef void(*ssm_enum_func)(unsigned int key, IPSession value, const void *obj);$/;"	t
+ssm_exists	sessionmap.c	/^int ssm_exists(const SessionMap *map, unsigned int key)$/;"	f
+ssm_get	sessionmap.c	/^int ssm_get(const SessionMap *map, unsigned int key, IPSession *out_buf)$/;"	f
+ssm_get_count	sessionmap.c	/^int ssm_get_count(const SessionMap *map)$/;"	f
+ssm_new	sessionmap.c	/^SessionMap * ssm_new(unsigned int capacity)$/;"	f
+ssm_put	sessionmap.c	/^int ssm_put(SessionMap *map, unsigned int key, IPSession value)$/;"	f
+stats	strintmap.h	/^	struct Stats stats[16];$/;"	m	struct:IPData	typeref:struct:IPData::Stats
+tcp_packet_decode	tcp_decode.c	/^void tcp_packet_decode(const uint8_t *packet,uint64_t packet_len)$/;"	f
+timev	statmain.c	/^time_t timev;$/;"	v
+ts	sessionmap.h	/^	struct timeval ts;$/;"	m	struct:session_info_	typeref:struct:session_info_::timeval
+udp_packet_decode	udp_decode.c	/^void udp_packet_decode(const struct pcap_pkthdr *h, const u_char *p)$/;"	f
+uint16_t	tcp_decode.h	/^typedef unsigned short		uint16_t;$/;"	t
+uint16_t	udp_decode.h	/^typedef unsigned short		uint16_t;$/;"	t
+uint32_t	tcp_decode.h	/^typedef unsigned int		uint32_t;$/;"	t
+uint32_t	udp_decode.h	/^typedef unsigned int		uint32_t;$/;"	t
+uint8_t	tcp_decode.h	/^typedef unsigned char		uint8_t;$/;"	t
+uint8_t	udp_decode.h	/^typedef unsigned char		uint8_t;$/;"	t
+usage	statmain.c	/^void usage(void )$/;"	f
+value	sessionmap.h	/^	IPSession value;$/;"	m	struct:PairSession
+value	strintmap.h	/^	struct IPData value;$/;"	m	struct:Pairint	typeref:struct:Pairint::IPData
+value	strmap.h	/^	char *value;$/;"	m	struct:Pair
+write_stats	statmain.c	/^void *write_stats(void *data) $/;"	f

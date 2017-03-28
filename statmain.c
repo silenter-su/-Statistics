@@ -20,7 +20,7 @@
 #include <stdlib.h>
 //#include "decode_head.h"
 #include "tcp_decode.h"
-
+#include "udp_decode.h"
 #define MEMFILE  "/var/run/.memfile" 
 #define STATS_DIR "/var/log/protostats/minute/"
 #define DETECTED_PROTO_NUM 80000 
@@ -29,7 +29,8 @@
 StrMap *ipPortMap ;
 StrMap *proIdMap ;
 StrMap *idProMap ;
-StrintMap *ipdataMap =NULL;
+StrintMap *ipdataMap;
+SessionMap *UDPstatusMap;
 #endif
 char net_range[64];
 uint32_t ipstart;
@@ -480,6 +481,7 @@ void PacketCallback(u_char *user, const struct pcap_pkthdr *h, const u_char *p)
 		case 17:
 			if (sm_get(proIdMap, "udp", strid, sizeof(strid)) ==1) {
 				// todo: 
+				udp_packet_decode(h,p);
 			}
 			break;
 		case 1: 
@@ -564,12 +566,20 @@ int main(int argc, char **argv)
 	proIdMap = sm_new(256);
 	idProMap = sm_new(256);
 	ipdataMap = smint_new(DETECTED_PROTO_NUM); 
+	UDPstatusMap = ssm_new(DETECTED_PROTO_NUM);
 	parse_confile();
 
-	pthread_t pth_id;
+	pthread_t pth_id,pth_exist_conn;
+	pthread_attr_t attr;
+	pthread_attr_init(&attr);
+	pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_DETACHED);
 
 	if (pthread_create(&pth_id, NULL, (void*)write_stats, NULL) != 0) {
 		printf("create thread error!\n");
+		return -1;
+	}
+	if (pthread_create(&pth_exist_conn,&attr,ExistConnCount, "udp") != 0) {
+		printf("create ExistConnCount error!\n");
 		return -1;
 	}
 

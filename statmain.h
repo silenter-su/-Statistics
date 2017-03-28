@@ -34,6 +34,7 @@
 #include <pthread.h>
 #include "strintmap.h"
 #include "strmap.h"
+#include "sessionmap.h"
 
 /*
 struct Stats {

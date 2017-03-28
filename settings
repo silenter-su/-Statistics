@@ -1,0 +1,7 @@
+NETWORK=192.168.59.1-192.168.59.255
+INTERFACE=eth0
+tcp=on
+udp=on
+icmp=on
+http=on
+ssh=on
