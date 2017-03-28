@@ -8,7 +8,7 @@
 #include <netinet/tcp.h>
 #include <netinet/ether.h>
 #include <unistd.h>
-#include "decode_head.h"
+//#include "decode_head.h"
 
 #define IP_HEADER_LEN		20			//IP数据包头长度
 #define TCP_HEADER_LEN		20			//TCP数据包头长度

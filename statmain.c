@@ -18,14 +18,14 @@
 #include "statmain.h"
 #include <strings.h>
 #include <stdlib.h>
-#include "decode_head.h"
+//#include "decode_head.h"
 #include "tcp_decode.h"
 #include "udp_decode.h"
 #define MEMFILE  "/var/run/.memfile" 
 #define STATS_DIR "/var/log/protostats/minute/"
 #define DETECTED_PROTO_NUM 80000 
 
-#if 0
+#if 1
 StrMap *ipPortMap ;
 StrMap *proIdMap ;
 StrMap *idProMap ;
@@ -47,7 +47,7 @@ time_t timev;
 
 #define DEVICE_NUM_MAX 32
 
-#if 0
+#if 1
 struct proto_port {
 	char protoname[64];
 	int protowithport;
@@ -60,7 +60,7 @@ struct proto_port pport[256];
 
 static pcap_t *pd;
 
-#if 0
+#if 1
 struct ipport_pro {
 	char ipport[12];
 	char proto[16];
