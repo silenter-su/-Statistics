@@ -1,9 +1,11 @@
+#if 0
 #include <arpa/inet.h>
 #include <netinet/ip.h> 
 #include <linux/udp.h>
 #include "strintmap.h"
 #include "strmap.h"
 #include "sessionmap.h"
+#endif
 #include "udp_decode.h"
 
 extern StrMap *proIdMap;
@@ -11,9 +13,7 @@ extern StrMap *idProMap;
 extern StrMap *ipPortMap;
 extern StrintMap *ipdataMap;
 extern SessionMap *UDPstatusMap;
-
-#define IP_OFFSET 14
-#define INCR 100
+extern SessionMap *ICMPstatusMap;
 
 /*************
  * Function:		add_ipdata_pro
@@ -123,7 +123,13 @@ void  add_ipdata_exist_num(u_int32_t ip, u_int16_t protoid,unsigned int exist_nu
 		memset(&cip,0,sizeof(struct in_addr));
 		cip.s_addr = ntohl(ip);
 		
-		printf("Now IP:%s exist UDP connction number is %d!\n",inet_ntoa(cip),exist_num);
+		char tmp[8] = { 0 };
+		char pname[8] = { 0 };
+		sprintf(tmp, "%d", protoid);
+		sm_get(idProMap, tmp, pname, sizeof(pname));
+		printf("Now IP:%s exist %s connction number is %d!\n",inet_ntoa(cip),pname,exist_num);
+		smint_put(ipdataMap,ip,ipstats);
+	
 	}
 	return ;
 }
@@ -131,7 +137,7 @@ void  add_ipdata_exist_num(u_int32_t ip, u_int16_t protoid,unsigned int exist_nu
 /**************
  *	Function:		SetExistconn	
  *	Description:
- *		检查当前ip当前存在的链接数
+ *		设置当前ip当前存在的链接数
  *	Parameters:
  *		key		当前的源IP
  *		value	当前源IP的会话数组
@@ -152,10 +158,12 @@ void SetExistconn(unsigned int key,IPSession value,const void *obj)
 	for(i = 0; i < value.session_count; i++){
 		if((tv.tv_sec - ((*(value.sessions + i)).ts.tv_sec)) < UDP_TIMEOUT){
 			exist_num++;
+		} else {
+			value.sessions_flag[i] = 1; /* 已经超时的连接,现在把它的flag置为1,如果有了新连接,将会填补它 */
 		}
 	}
 	if (!sm_get(proIdMap, protocol, strid, sizeof(strid))) {
-		printf("UDP protocol not enable!\n");
+		printf("UDP protocol not enable!%s(%d)\n",__FILE__,__LINE__);
 	}
 	add_ipdata_exist_num(key, atoi(strid),exist_num);
 }
@@ -172,15 +180,28 @@ void SetExistconn(unsigned int key,IPSession value,const void *obj)
 void* ExistConnCount(void *arg) {
 	char *str = (char*)arg;
 	int i = 0;
-	printf("In function ExistconnCount!\n");
+	printf("In function ExistconnCount! Now protocol is %s ,%s(%d)\n",arg,__FILE__,__LINE__);
 	while(1){
 		i++;
-		printf("In loop of ExistConnCount,now is loop %d!\n",i);
+		printf("In loop of ExistConnCount,now is loop %d!Now protocol is %s\n",i,arg);
 		sleep(UDP_TIME);
 		int ret = 0;
 		if(!(ret = ssm_enum(UDPstatusMap,SetExistconn,arg))){
 			printf("SetExistconn error!\n");
 		}
+		/* 查看目前UDP哈希表占用多少内存,如果超过范围,就将哈希表删除,重新建立哈希表 */
+		int pairnum = 0;
+		pairnum = ssm_get_count(UDPstatusMap);
+		if((pairnum * sizeof(PairSession)) > MAXMAP) {
+			ssm_delete(UDPstatusMap); /* 此处要加锁 */
+			UDPstatusMap =  ssm_new(DETECTED_PROTO_NUM); 
+		}	
+		pairnum = ssm_get_count(ICMPstatusMap);
+		if((pairnum * sizeof(PairSession)) > MAXMAP) {
+			ssm_delete(ICMPstatusMap); /* 此处要加锁 */
+			ICMPstatusMap =  ssm_new(DETECTED_PROTO_NUM); 
+		}	
+
 	}
 }
 
@@ -217,7 +238,7 @@ void udp_packet_decode(const struct pcap_pkthdr *h, const u_char *p)
 	session_info *tmpinfo;
 	tmpinfo = (session_info*)calloc(1,sizeof(session_info));
 	if(!tmpinfo){
-		printf("Packetcallback swich UDP protocol calloc tmpinfo failed!\n"); /* 写日志 */
+		printf("Packetcallback swich UDP protocol calloc tmpinfo failed!%s(%d)\n",__FILE__,__LINE__);
 		return;
 	}
 	tmpinfo->srcip = srcip;
@@ -229,12 +250,18 @@ void udp_packet_decode(const struct pcap_pkthdr *h, const u_char *p)
 	IPSession tmpipses;
 	memset(&tmpipses,0,sizeof(IPSession));
 	/* 源IP做key查询 */
-	if(ssm_get(UDPstatusMap,srcip,&tmpipses) != 1) {  //用源IP去UPD状态表里面查询,如果没有的话执行下面的语句块
-		tmpipses.sessions = (session_info*)calloc(INCR,sizeof(session_info));//给这个IP分配会话数组空间
+	if(ssm_get(UDPstatusMap,srcip,&tmpipses) != 1) {  /* 用源IP去UPD状态表里面查询,如果没有的话执行下面的语句块 */
+		tmpipses.sessions = (session_info*)calloc(INCR,sizeof(session_info));/* 给这个IP分配会话数组空间 可以封装*/
 		if(!tmpipses.sessions){
-			printf("Packetcallback swich UDP protocol calloc sessions failed!\n"); /* 写日志 */
+			printf("Packetcallback swich UDP protocol calloc sessions failed!%s(%d)\n",__FILE__,__LINE__);
 			return;
 		}
+		tmpipses.sessions_flag = (int*)calloc(INCR,sizeof(int));
+		if(!tmpipses.sessions_flag){
+			printf("Packetcallback swich UDP protocol calloc sessions_flag failed!%s(%d)\n",__FILE__,__LINE__);
+			return;
+		}
+
 		tmpipses.capacity = INCR;//把当前的ip和这个ip的会话放入value,执行到最下面时将会把这个ip做key,然后把Value放入UDP状态哈希;
 		tmpipses.sessions[0] = *tmpinfo;
 		tmpipses.session_count++;
@@ -245,7 +272,12 @@ void udp_packet_decode(const struct pcap_pkthdr *h, const u_char *p)
 		if((tmpipses.session_count) == tmpipses.capacity) { //如果这个ip的会话数组已经满了,给它增长容量
 			tmpipses.sessions = (session_info*)realloc(tmpipses.sessions,tmpipses.session_count + INCR);
 			if(!tmpipses.sessions){
-				printf("Packetcallback swich UDP protocol realloc sessions failed!\n"); /* 写日志 */
+				printf("Packetcallback swich UDP protocol realloc sessions failed!%s(%d)\n",__FILE__,__LINE__);
+				return;
+			}
+			tmpipses.sessions_flag = (int*)realloc(tmpipses.sessions_flag,tmpipses.session_count + INCR); 
+			if(!tmpipses.sessions_flag){
+				printf("Packetcallback swich UDP protocol realloc sessions_flag failed!%s(%d)\n",__FILE__,__LINE__);
 				return;
 			}
 			tmpipses.capacity += INCR;
@@ -268,8 +300,21 @@ void udp_packet_decode(const struct pcap_pkthdr *h, const u_char *p)
 
 			}//遍历完
 			if(flag == 0) {//遍历完后没有找到,那么这是一个新的会话,把它放入这个IP的会话数组,把会话数加1
-				tmpipses.sessions[tmpipses.session_count] = *tmpinfo;
-				tmpipses.session_count++;
+				int i;
+				int flag = 0; /* 如果填补了超时链接的位置就置为1 */
+				for(i = 0; i < tmpipses.session_count; i++) /* 先寻找一下会话数组内有没有已经超时的链接 */
+				{
+					if(*(tmpipses.sessions_flag + i)) {
+						flag = 1;
+						break;
+					}
+				}
+				
+				tmpipses.sessions[i] = *tmpinfo;
+				tmpipses.sessions_flag[i] = 0;
+				if(!flag) /* 当没有填补时 */
+					tmpipses.session_count++;
+
 				add_ipdata_pro(tmpinfo->srcip,h->caplen,atoi(strid),0);
 				add_ipdata_pro(tmpinfo->dstip,h->caplen,atoi(strid),1);
 			}

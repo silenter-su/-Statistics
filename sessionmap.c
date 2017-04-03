@@ -74,6 +74,7 @@ void ssm_delete(SessionMap *map)
 		pair = bucket->pairs;
 		j = 0;
 		while(j < m) {
+			free(pair->value.sessions_flag);
 			free(pair->value.sessions);
 			pair++;
 			j++;

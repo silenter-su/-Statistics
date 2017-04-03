@@ -1,5 +1,5 @@
 TARGET = bdstat
-OBJECTS = statmain.o tcp_decode.o strintmap.o strmap.o sessionmap.o udp_decode.o
+OBJECTS = statmain.o tcp_decode.o strintmap.o strmap.o sessionmap.o udp_decode.o icmp_decode.o
 INCLUDES = 
 BDSTATLIB = -lpcap -lpthread
 

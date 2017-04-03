@@ -15,13 +15,12 @@
  *
  * =====================================================================================
  */
-#include "statmain.h"
+#define _GNU_SOURCE
 #include <strings.h>
 #include <stdlib.h>
 #include <pthread.h>
 #include <bits/pthreadtypes.h>
-
-//#include "decode_head.h"
+#include "statmain.h"
 #include "tcp_decode.h"
 #include "udp_decode.h"
 #define MEMFILE  "/var/run/.memfile" 
@@ -32,10 +31,10 @@
 StrMap *ipPortMap ;
 StrMap *proIdMap ;
 StrMap *idProMap ;
-StrintMap *ipdataMap;
-SessionMap *UDPstatusMap;
+StrintMap *ipdataMap ;
+SessionMap *UDPstatusMap ;
+SessionMap *ICMPstatusMap ;
 #endif
-static pthread_rwlock_t UDPrwlock;
 
 char net_range[64];
 uint32_t ipstart;
@@ -492,6 +491,7 @@ void PacketCallback(u_char *user, const struct pcap_pkthdr *h, const u_char *p)
 		case 1: 
 			if (sm_get(proIdMap, "icmp", strid, sizeof(strid)) ==1) {
 				//todo:
+				icmp_packet_decode(h,p);
 			}
 			break;
 		default:
@@ -572,16 +572,12 @@ int main(int argc, char **argv)
 	idProMap = sm_new(256);
 	ipdataMap = smint_new(DETECTED_PROTO_NUM); 
 	UDPstatusMap = ssm_new(DETECTED_PROTO_NUM);
+	ICMPstatusMap = ssm_new(DETECTED_PROTO_NUM);
 	
 	int res;
-	res = pthread_rwlock_init(&UDPrwlock,NULL);{
-		if(!res){
-			pererror("rwlock_initialization failed!%s(%d)\n",__FILE__,__LINE__);
-		}
-	}
 	parse_confile();
 
-	pthread_t pth_id,pth_exist_conn;
+	pthread_t pth_id,udp_exist_conn,icmp_exist_conn;
 	pthread_attr_t attr;
 	pthread_attr_init(&attr);
 	pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_DETACHED);
@@ -591,7 +587,11 @@ int main(int argc, char **argv)
 		printf("create thread error!%s(%d)\n",__FILE__,__LINE__);
 		return -1;
 	}
-	if (pthread_create(&pth_exist_conn,&attr,ExistConnCount, "udp") != 0) {
+	if (pthread_create(&udp_exist_conn,&attr,ExistConnCount, "udp") != 0) {
+		printf("create ExistConnCount error!%s(%d)\n",__FILE__,__LINE__);
+		return -1;
+	}
+	if (pthread_create(&icmp_exist_conn,&attr,ExistConnCount, "icmp") != 0) {
 		printf("create ExistConnCount error!%s(%d)\n",__FILE__,__LINE__);
 		return -1;
 	}
