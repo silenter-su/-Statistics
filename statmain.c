@@ -18,6 +18,9 @@
 #include "statmain.h"
 #include <strings.h>
 #include <stdlib.h>
+#include <pthread.h>
+#include <bits/pthreadtypes.h>
+
 //#include "decode_head.h"
 #include "tcp_decode.h"
 #include "udp_decode.h"
@@ -32,6 +35,8 @@ StrMap *idProMap ;
 StrintMap *ipdataMap;
 SessionMap *UDPstatusMap;
 #endif
+static pthread_rwlock_t UDPrwlock;
+
 char net_range[64];
 uint32_t ipstart;
 uint32_t ipend;
@@ -567,6 +572,13 @@ int main(int argc, char **argv)
 	idProMap = sm_new(256);
 	ipdataMap = smint_new(DETECTED_PROTO_NUM); 
 	UDPstatusMap = ssm_new(DETECTED_PROTO_NUM);
+	
+	int res;
+	res = pthread_rwlock_init(&UDPrwlock,NULL);{
+		if(!res){
+			pererror("rwlock_initialization failed!%s(%d)\n",__FILE__,__LINE__);
+		}
+	}
 	parse_confile();
 
 	pthread_t pth_id,pth_exist_conn;
@@ -574,12 +586,13 @@ int main(int argc, char **argv)
 	pthread_attr_init(&attr);
 	pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_DETACHED);
 
+
 	if (pthread_create(&pth_id, NULL, (void*)write_stats, NULL) != 0) {
-		printf("create thread error!\n");
+		printf("create thread error!%s(%d)\n",__FILE__,__LINE__);
 		return -1;
 	}
 	if (pthread_create(&pth_exist_conn,&attr,ExistConnCount, "udp") != 0) {
-		printf("create ExistConnCount error!\n");
+		printf("create ExistConnCount error!%s(%d)\n",__FILE__,__LINE__);
 		return -1;
 	}
 
