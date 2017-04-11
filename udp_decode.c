@@ -120,7 +120,7 @@ void  add_session(uint32_t ip,session_info *info,uint64_t len,uint16_t protoid,i
 	IPSession tmpipses;
 	memset(&tmpipses,0,sizeof(IPSession));	
 	
-	if(ssm_get(map,info->srcip,&tmpipses) != 1){
+	if(ssm_get(map,ip,&tmpipses) != 1){
 			sessions_calloc(&tmpipses);
 			tmpipses.sessions[0] = *info;
 			tmpipses.session_count++;
@@ -143,6 +143,7 @@ void  add_session(uint32_t ip,session_info *info,uint64_t len,uint16_t protoid,i
 	ssm_put(map,ip,tmpipses);
 	return;
 }
+#if 0
 /*************
  * Function:		add_ipdata_pro
  * Description:		
@@ -261,6 +262,7 @@ void  add_ipdata_exist_num(u_int32_t ip, u_int16_t protoid,unsigned int exist_nu
 	}
 	return ;
 }
+#endif
 
 /**************
  *	Function:	ClearValue	
@@ -297,12 +299,13 @@ void print_value(IPSession *value,int i)
 				"dip%lu\n"
 				"sport%d\n"
 				"dport%d\n"
-				"ts%lu"
+				"ts%lu\n"
 				,value->sessions[i].srcip
 				,value->sessions[i].dstip
 				,value->sessions[i].srcport
 				,value->sessions[i].dstport
 				,value->sessions[i].ts.tv_sec);
+	printf("当前的协议ID是: %d\n",value->protoid);
 
 }
 
@@ -341,7 +344,7 @@ void GetExistconn(unsigned int key,IPSession value,const void *obj)
 	if (!sm_get(proIdMap, protocol, strid, sizeof(strid))) {
 		printf("UDP protocol not enable!%s(%d)\n",__FILE__,__LINE__);
 	}
-	int protoid = atoi(strid);
+	uint16_t protoid = atoi(strid);
 	struct IPData tmpstats;
 	memset(&tmpstats,0,sizeof(struct IPData));
 	if(smint_get(ipdataMap,key,&tmpstats) != 1) {
@@ -357,6 +360,7 @@ void GetExistconn(unsigned int key,IPSession value,const void *obj)
 		tmpstats.stats[protoid].newconn = value.newconn;
 		tmpstats.stats[protoid].existconn = value.existconn;
 		tmpstats.stats[protoid].accesstimes = value.accesstimes;
+		tmpstats.stats[protoid].protoid = protoid;
 
 	} else {
 
@@ -366,15 +370,16 @@ void GetExistconn(unsigned int key,IPSession value,const void *obj)
 		tmpstats.stats[0].existconn += value.existconn;
 		tmpstats.stats[0].accesstimes += value.accesstimes;
 
-		tmpstats.stats[protoid].sendsize = value.sendsize;
-		tmpstats.stats[protoid].recvsize = value.recvsize;
-		tmpstats.stats[protoid].newconn = value.newconn;
-		tmpstats.stats[protoid].existconn = value.existconn;
-		tmpstats.stats[protoid].accesstimes = value.accesstimes;
+		tmpstats.stats[protoid].sendsize += value.sendsize;
+		tmpstats.stats[protoid].recvsize += value.recvsize;
+		tmpstats.stats[protoid].newconn += value.newconn;
+		tmpstats.stats[protoid].existconn += value.existconn;
+		tmpstats.stats[protoid].accesstimes += value.accesstimes;
+		tmpstats.stats[protoid].protoid = protoid;
 
 	}
-	tmpstats.stats[0].protoid += value.protoid;
-	tmpstats.stats[protoid].protoid = value.protoid;
+	//tmpstats.stats[0].protoid += value.protoid;
+	//tmpstats.stats[protoid].protoid = value.protoid;
 	smint_put(ipdataMap,key,tmpstats);
 	return;
 }
@@ -432,7 +437,7 @@ void* ExistConnCount(void *arg) {
 			ssm_delete(ICMPstatusMap); 
 			ICMPstatusMap =  ssm_new(DETECTED_PROTO_NUM); 
 		}	
-		//sleep(60);
+		sleep(60);
 
 	}
 }
@@ -476,5 +481,5 @@ void udp_packet_decode(const struct pcap_pkthdr *h, const u_char *p,uint16_t pro
 	tmpinfo.ts = h->ts;
 
 	add_session(tmpinfo.srcip,&tmpinfo,h->caplen,proid,0,UDPstatusMap);
-	add_session(tmpinfo.dstip,&tmpinfo,h->caplen,proid,0,UDPstatusMap);
+	add_session(tmpinfo.dstip,&tmpinfo,h->caplen,proid,1,UDPstatusMap);
 }

@@ -291,6 +291,7 @@ char *check_file() /* 文件访问控制,循环生成十分钟内的访问数据
 	return file;
 }
 
+int aaa = 0;
 void smint_iter(const StrintMap *map)
 {
 	check_file();
@@ -357,11 +358,13 @@ void smint_iter(const StrintMap *map)
 				}
 				*/
 				//if (sm_exists());
-				if (pair->value.stats[k].protoid == 0) {
-					fprintf(fp, "%llu|", pair->value.stats[k].recvsize);
-					fprintf(fp, "%llu|", pair->value.stats[k].sendsize);
-					fprintf(fp, "%llu|", pair->value.stats[k].newconn);
-					fprintf(fp, "%llu|", pair->value.stats[k].existconn);
+				//if (pair->value.stats[k].protoid == 0) { 苏明刚注释
+				if (k == 0) {
+					fprintf(fp, "%llu []|", pair->value.stats[k].recvsize);
+					fprintf(fp, "%llu []|", pair->value.stats[k].sendsize);
+					fprintf(fp, "%llu []|", pair->value.stats[k].newconn);
+					fprintf(fp, "%llu []|", pair->value.stats[k].existconn);
+					aaa++;
 					//add by njl
 					//pair->value.stats[k].recvsize = 0;
 					//pair->value.stats[k].sendsize = 0;
@@ -371,11 +374,11 @@ void smint_iter(const StrintMap *map)
 				}
 
 				//printf("tmp: %s\n", tmp);
-				fprintf(fp, "%llu|", pair->value.stats[k].recvsize);
-				fprintf(fp, "%llu|", pair->value.stats[k].sendsize);
-				fprintf(fp, "%llu|", pair->value.stats[k].newconn);
-				fprintf(fp, "%llu|", pair->value.stats[k].existconn);
-				fprintf(fp, "%llu|", pair->value.stats[k].accesstimes);
+				fprintf(fp, "%llu recv|", pair->value.stats[k].recvsize);
+				fprintf(fp, "%llu send|", pair->value.stats[k].sendsize);
+				fprintf(fp, "%llu newc|", pair->value.stats[k].newconn);
+				fprintf(fp, "%llu exis|", pair->value.stats[k].existconn);
+				fprintf(fp, "%llu acce|", pair->value.stats[k].accesstimes);
 				//add by njl
 //				pair->value.stats[k].recvsize = 0;
 //				pair->value.stats[k].sendsize = 0;
@@ -405,7 +408,9 @@ void smint_iter(const StrintMap *map)
 		bucket++;
 		i++;
 	}
+	fprintf(fp,"%d\n",aaa);
 	fclose(fp);
+	aaa = 0;
 	return ;
 }
 
@@ -491,7 +496,7 @@ void PacketCallback(u_char *user, const struct pcap_pkthdr *h, const u_char *p)
 		case 1: 
 			if (sm_get(proIdMap, "icmp", strid, sizeof(strid)) ==1) {
 				//todo:
-				icmp_packet_decode(h,p,strid);
+				//icmp_packet_decode(h,p,strid);
 			}
 			break;
 		default:

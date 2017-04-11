@@ -16,7 +16,7 @@ extern SessionMap *ICMPstatusMap;
  *		packet_len	数据包大小
  *	Returns:		void
  * *************/
-
+#if 0
 void icmp_packet_decode(const struct pcap_pkthdr *h, const u_char *p,char *strid)
 {
 	const struct ip *ip;
@@ -119,3 +119,4 @@ void icmp_packet_decode(const struct pcap_pkthdr *h, const u_char *p,char *strid
 		ssm_put(ICMPstatusMap,srcip,tmpipses);
 		free(tmpinfo);
 }
+#endif
