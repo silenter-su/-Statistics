@@ -45,6 +45,7 @@ extern "C"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <inttypes.h>
 
 typedef struct session_info_ {
 	unsigned int srcip;
@@ -55,6 +56,13 @@ typedef struct session_info_ {
 } session_info;
 
 typedef struct IPSession_ {
+	uint64_t	sendsize;
+	uint64_t	recvsize;
+	uint32_t	newconn;
+	uint32_t	existconn;
+	uint32_t	accesstimes;
+	uint16_t	protoid;
+	
 	unsigned int capacity;			/* 当前session数组容量,通过malloc,realloc,来分配,一次增长量为宏INCR(increment) */
 	unsigned int session_count;		/* 记录当前有多少会话 */
 	int *sessions_flag;				/* 动态分配的int型数组,记录会话有没有超时 */

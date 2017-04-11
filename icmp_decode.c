@@ -1,12 +1,3 @@
-#if 0
-#include <arpa/inet.h>
-#include <netinet/ip.h> 
-#include <linux/icmp.h>
-#include "strintmap.h"
-#include "strmap.h"
-#include "sessionmap.h"
-#endif
-
 #include "icmp_decode.h"
 
 extern StrMap *proIdMap;
@@ -91,7 +82,7 @@ void icmp_packet_decode(const struct pcap_pkthdr *h, const u_char *p,char *strid
 		for(i = 0; i < tmpipses.session_count; i++) { //遍历这个ip的所有会话
 			if(!memcmp((tmpipses.sessions + i),tmpinfo,12)){//如果这个会话已经存在
 				flag = 1;
-				if((tmpinfo->ts.tv_sec - tmpipses.sessions[i].ts.tv_sec) > ICMP_TIMEOUT) {     //超时,虽然找到了,但原来的连接状态已经超时了,这一个算新连接,把连接计数+1
+				if((tmpinfo->ts.tv_sec - tmpipses.sessions[i].ts.tv_sec) > TIMEOUT) {     //超时,虽然找到了,但原来的连接状态已经超时了,这一个算新连接,把连接计数+1
 					add_ipdata_pro(tmpinfo->srcip, h->caplen, atoi(strid), 0);
 					add_ipdata_pro(tmpinfo->dstip, h->caplen, atoi(strid), 1);
 					tmpipses.sessions[i].ts.tv_sec = tmpinfo->ts.tv_sec;//这里是把时间更新

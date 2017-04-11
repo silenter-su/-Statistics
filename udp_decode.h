@@ -10,8 +10,7 @@
 #include "sessionmap.h"
 
 #define INCR 100
-#define UDP_TIMEOUT 300
-#define UDP_TIME 60
+#define TIMEOUT 300
 #define IP_OFFSET 14
 #define MAXMAP 1000000000
 #define DETECTED_PROTO_NUM 80000 
@@ -20,11 +19,15 @@ typedef unsigned char		uint8_t;
 typedef unsigned short		uint16_t;
 typedef unsigned int		uint32_t;
 
+void  sessions_realloc(IPSession *tmpipses);
+void  sessions_calloc(IPSession *tmpipses);
+void  add_session(uint32_t ip,session_info *info,uint64_t len,uint16_t protoid,int flag,SessionMap *map);
+void  detect_sessions(IPSession *tmpipses,session_info *tmpinfo);
 void  add_ipdata_pro(u_int32_t ip, u_int64_t size, u_int16_t protoid, int flag);
 void  add_ipdata_acc(u_int32_t ip, u_int64_t size, u_int16_t protoid, int flag);
 void  add_ipdata_exist_num(u_int32_t ip, u_int16_t protoid,unsigned int exist_num);
-void  SetExistconn(unsigned int key,IPSession value,const void *obj);
+void  GetExistconn(unsigned int key,IPSession value,const void *obj);
 void* ExistConnCount(void *arg);
-void  udp_packet_decode(const struct pcap_pkthdr *h,const u_char *p,char *strid);
+void  udp_packet_decode(const struct pcap_pkthdr *h,const u_char *p,uint16_t proid);
 
 #endif

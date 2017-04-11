@@ -485,7 +485,7 @@ void PacketCallback(u_char *user, const struct pcap_pkthdr *h, const u_char *p)
 		case 17:
 			if (sm_get(proIdMap, "udp", strid, sizeof(strid)) ==1) {
 				// todo: 
-				udp_packet_decode(h,p,strid);
+				udp_packet_decode(h,p,atoi(strid));
 			}
 			break;
 		case 1: 

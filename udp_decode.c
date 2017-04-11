@@ -1,11 +1,3 @@
-#if 0
-#include <arpa/inet.h>
-#include <netinet/ip.h> 
-#include <linux/udp.h>
-#include "strintmap.h"
-#include "strmap.h"
-#include "sessionmap.h"
-#endif
 #include "udp_decode.h"
 
 extern StrMap *proIdMap;
@@ -16,6 +8,141 @@ extern SessionMap *UDPstatusMap;
 extern SessionMap *ICMPstatusMap;
 time_t timev;
 
+/*************
+ * Function:	detect_sessions
+ * Description:		
+ *		检测tmpipsess下的会话数组,并处理相应的数据
+ *	Parameters:
+ *		tmpipses	临时IPSession结构体	
+ *		tmpinfo		临时会话四元组信息结构体
+ *	Returns:	void.
+ * ***********/
+
+void detect_sessions(IPSession *tmpipses,session_info *tmpinfo)
+{
+	int exist = 0,i;
+	for(i = 0; i < tmpipses->session_count; i++) { 
+		if(!memcmp((tmpipses->sessions + i),tmpinfo,12)){/* 如果这个会话已经存在 */
+			exist = 1;
+			if((tmpinfo->ts.tv_sec - tmpipses->sessions[i].ts.tv_sec) > TIMEOUT) { /* 超时 */
+				tmpipses->sessions[i].ts.tv_sec = tmpinfo->ts.tv_sec;/* 更新时间 */
+				tmpipses->newconn++; /* 算是一个新链接 */
+				tmpipses->accesstimes++;
+				tmpipses->sessions_flag[i] = 0; /* 将这个链接标示为有效链接 */
+			}else { /* 未超时 */
+				tmpipses->sessions[i].ts.tv_sec = tmpinfo->ts.tv_sec;/* 更新时间 */
+				tmpipses->accesstimes++;
+				tmpipses->sessions_flag[i] = 0; /* 将这个链接标示为有效链接 */
+			}
+			break;
+		}
+
+	} /* 遍历完成 */
+	if(exist == 0) {/* 遍历完后没有找到,那么这是一个新的会话,把它放入这个IP的会话数组,把新连接计数+1,访问次数+1 */
+		int i;
+		int flag = 0; /* 如果找到了无效链接的位置就置为1 */
+		for(i = 0; i < tmpipses->session_count; i++) /* 先寻找一下会话数组内有没有无效的链接 */
+		{
+			if(tmpipses->sessions_flag[i]) {
+				flag = 1;
+				break;
+			}
+		}
+		tmpipses->sessions[i] = *tmpinfo;
+		tmpipses->sessions_flag[i] = 0;
+		tmpipses->newconn++;
+		tmpipses->accesstimes++;
+		if(!flag) /* 如果没有填补超时连接时,将会话计数++ */
+			tmpipses->session_count++;
+	}
+}
+
+/*************
+ * Function:	sessions_reallc	
+ * Description:		
+ *		为tmpipses结构体内的sessions扩大内存空间
+ *	Parameters:
+ *		tmpipses	临时IPSession结构体	
+ *	Returns:	void.
+ * ***********/
+void  sessions_realloc(IPSession *tmpipses)
+{
+	tmpipses->sessions = (session_info*)realloc(tmpipses->sessions,tmpipses->session_count + INCR);
+	if(!tmpipses->sessions){
+		printf("Packetcallback swich UDP protocol realloc sessions failed!%s(%d)\n",__FILE__,__LINE__);
+		return;
+	}
+	tmpipses->sessions_flag = (int*)realloc(tmpipses->sessions_flag,tmpipses->session_count + INCR); 
+	if(!tmpipses->sessions_flag){
+		printf("Packetcallback swich UDP protocol realloc sessions_flag failed!%s(%d)\n",__FILE__,__LINE__);
+		return;
+	}
+	tmpipses->capacity += INCR;
+}
+/*************
+ * Function:	sessions_callc	
+ * Description:		
+ *		为tmpipses结构体内的sessions申请内存空间
+ *	Parameters:
+ *		tmpipses	临时IPSession结构体	
+ *	Returns:	void.
+ * ***********/
+void  sessions_calloc(IPSession *tmpipses)
+{		
+	tmpipses->sessions = (session_info*)calloc(INCR,sizeof(session_info));/* 给这个IP分配会话数组空间 */
+	if(!tmpipses->sessions){
+		printf("Packetcallback swich UDP protocol calloc sessions failed!%s(%d)\n",__FILE__,__LINE__);
+		return;
+	}
+	tmpipses->sessions_flag = (int*)calloc(INCR,sizeof(int));
+	if(!tmpipses->sessions_flag){
+		printf("Packetcallback swich UDP protocol calloc sessions_flag failed!%s(%d)\n",__FILE__,__LINE__);
+		return;
+	}
+	tmpipses->capacity = INCR;
+}
+/*************
+ * Function:	add_session	
+ * Description:		
+ *		增加session会话表中相应的计数,例如UDP ICMP建立的会话计数map.
+ *	Parameters:
+ *		ip		当前ip.
+ *		info	session会话结构体
+ *		len		当前数据帧大小.
+ *		protoid	当前协议.
+ *		flag	标识源ip还是目的ip.
+ *		map		要查询的map
+ *	Returns:	void.
+ * ***********/
+
+void  add_session(uint32_t ip,session_info *info,uint64_t len,uint16_t protoid,int flag,SessionMap *map)
+{
+	IPSession tmpipses;
+	memset(&tmpipses,0,sizeof(IPSession));	
+	
+	if(ssm_get(map,info->srcip,&tmpipses) != 1){
+			sessions_calloc(&tmpipses);
+			tmpipses.sessions[0] = *info;
+			tmpipses.session_count++;
+			tmpipses.newconn++;
+			tmpipses.accesstimes++;
+			
+	}else{
+		if((tmpipses.session_count) == tmpipses.capacity) /* 如果这个ip的会话数组已经满了,给它增长容量 */
+			sessions_realloc(&tmpipses); 
+		detect_sessions(&tmpipses,info); /* 检测会话,并做相应处理 */
+	}
+
+	if(flag == 0) {
+		tmpipses.sendsize+=len;
+	} else if(flag == 1) {
+		tmpipses.recvsize+=len;
+	}
+	tmpipses.protoid = protoid;
+
+	ssm_put(map,ip,tmpipses);
+	return;
+}
 /*************
  * Function:		add_ipdata_pro
  * Description:		
@@ -136,7 +263,51 @@ void  add_ipdata_exist_num(u_int32_t ip, u_int16_t protoid,unsigned int exist_nu
 }
 
 /**************
- *	Function:		SetExistconn	
+ *	Function:	ClearValue	
+ *	Description:
+ *		清除所有IP上一分钟的计数
+ *	Parameters:
+ *		key		当前的源IP
+ *		value	当前源IP的会话数组
+ *		obj		协议字符串
+ *	Returns:		void
+ * *************/
+void ClearValue(unsigned int key,IPSession value,const void *obj)
+{
+	value.sendsize = 0;
+	value.recvsize = 0;
+	value.newconn = 0;
+	value.existconn = 0;
+	value.accesstimes = 0;
+
+	char *prostr = (char*)obj;
+	if(strstr(prostr,"udp")) {
+		ssm_put(UDPstatusMap,key,value);
+	}
+	if(strstr(prostr,"icmp")) {
+		ssm_put(ICMPstatusMap,key,value);
+	}
+	return;
+}
+
+void print_value(IPSession *value,int i)
+{
+	printf("Now i value is %d\n",i);
+	printf("sip%lu\n"
+				"dip%lu\n"
+				"sport%d\n"
+				"dport%d\n"
+				"ts%lu"
+				,value->sessions[i].srcip
+				,value->sessions[i].dstip
+				,value->sessions[i].srcport
+				,value->sessions[i].dstport
+				,value->sessions[i].ts.tv_sec);
+
+}
+
+/**************
+ *	Function:		GetExistconn	
  *	Description:
  *		设置当前ip当前存在的链接数
  *	Parameters:
@@ -146,7 +317,7 @@ void  add_ipdata_exist_num(u_int32_t ip, u_int16_t protoid,unsigned int exist_nu
  *	Returns:		void
  * *************/
 
-void SetExistconn(unsigned int key,IPSession value,const void *obj)
+void GetExistconn(unsigned int key,IPSession value,const void *obj)
 {
 	unsigned int exist_num = 0;
 	int i = 0;
@@ -157,16 +328,55 @@ void SetExistconn(unsigned int key,IPSession value,const void *obj)
 	gettimeofday(&tv,NULL);
 
 	for(i = 0; i < value.session_count; i++){
-		if((tv.tv_sec - ((*(value.sessions + i)).ts.tv_sec)) < UDP_TIMEOUT){
+		print_value(&value,i);
+		if((tv.tv_sec - value.sessions[i].ts.tv_sec) < TIMEOUT){
 			exist_num++;
 		} else {
 			value.sessions_flag[i] = 1; /* 已经超时的连接,现在把它的flag置为1,如果有了新连接,将会填补它 */
 		}
 	}
+	value.existconn = exist_num;
+
+	/* 先把一分钟之内统计的结果传给ipdatamap */
 	if (!sm_get(proIdMap, protocol, strid, sizeof(strid))) {
 		printf("UDP protocol not enable!%s(%d)\n",__FILE__,__LINE__);
 	}
-	add_ipdata_exist_num(key, atoi(strid),exist_num);
+	int protoid = atoi(strid);
+	struct IPData tmpstats;
+	memset(&tmpstats,0,sizeof(struct IPData));
+	if(smint_get(ipdataMap,key,&tmpstats) != 1) {
+
+		tmpstats.stats[0].sendsize += value.sendsize;
+		tmpstats.stats[0].recvsize += value.recvsize;
+		tmpstats.stats[0].newconn += value.newconn;
+		tmpstats.stats[0].existconn += value.existconn;
+		tmpstats.stats[0].accesstimes += value.accesstimes;
+
+		tmpstats.stats[protoid].sendsize = value.sendsize;
+		tmpstats.stats[protoid].recvsize = value.recvsize;
+		tmpstats.stats[protoid].newconn = value.newconn;
+		tmpstats.stats[protoid].existconn = value.existconn;
+		tmpstats.stats[protoid].accesstimes = value.accesstimes;
+
+	} else {
+
+		tmpstats.stats[0].sendsize += value.sendsize;
+		tmpstats.stats[0].recvsize += value.recvsize;
+		tmpstats.stats[0].newconn += value.newconn;
+		tmpstats.stats[0].existconn += value.existconn;
+		tmpstats.stats[0].accesstimes += value.accesstimes;
+
+		tmpstats.stats[protoid].sendsize = value.sendsize;
+		tmpstats.stats[protoid].recvsize = value.recvsize;
+		tmpstats.stats[protoid].newconn = value.newconn;
+		tmpstats.stats[protoid].existconn = value.existconn;
+		tmpstats.stats[protoid].accesstimes = value.accesstimes;
+
+	}
+	tmpstats.stats[0].protoid += value.protoid;
+	tmpstats.stats[protoid].protoid = value.protoid;
+	smint_put(ipdataMap,key,tmpstats);
+	return;
 }
 
 /**************
@@ -192,28 +402,38 @@ void* ExistConnCount(void *arg) {
 		int ret = 0;
 		char *protocol = (char*)arg;
 		if(strstr(protocol,"udp")){
-			if(!(ret = ssm_enum(UDPstatusMap,SetExistconn,arg))){
-				printf("SetExistconn error!\n");
+			if(!(ret = ssm_enum(UDPstatusMap,GetExistconn,arg))){
+				printf("GetExistconn error!%s(%d)\n",__FILE__,__LINE__);
 			}
+			/* 清除一分钟之间的计数 */
+			if(!(ret = ssm_enum(UDPstatusMap,ClearValue,arg))){
+				printf("ClearValue error!%s(%d)\n",__FILE__,__LINE__);
+			}
+			
 		}
 		if(strstr(protocol,"icmp")){
-			if(!(ret = ssm_enum(ICMPstatusMap,SetExistconn,arg))){
-				printf("SetExistconn error!\n");
+			if(!(ret = ssm_enum(ICMPstatusMap,GetExistconn,arg))){
+				printf("GetExistconn error!%s(%d)\n",__FILE__,__LINE__);
+			}
+			/* 清除一分钟之间的计数 */
+			if(!(ret = ssm_enum(ICMPstatusMap,ClearValue,arg))){
+				printf("ClearValue error!%s(%d)\n",__FILE__,__LINE__);
 			}
 		}
 		/* 查看目前UDP哈希表占用多少内存,如果超过范围,就将哈希表删除,重新建立哈希表 */
 		int pairnum = 0;
 		pairnum = ssm_get_count(UDPstatusMap);
 		if((pairnum * sizeof(PairSession)) > MAXMAP) {
-			ssm_delete(UDPstatusMap); /* 此处要加锁 */
+			ssm_delete(UDPstatusMap); 
 			UDPstatusMap =  ssm_new(DETECTED_PROTO_NUM); 
 		}	
 		pairnum = ssm_get_count(ICMPstatusMap);
 		if((pairnum * sizeof(PairSession)) > MAXMAP) {
-			ssm_delete(ICMPstatusMap); /* 此处要加锁 */
+			ssm_delete(ICMPstatusMap); 
 			ICMPstatusMap =  ssm_new(DETECTED_PROTO_NUM); 
 		}	
-		sleep(60);
+		//sleep(60);
+
 	}
 }
 
@@ -227,7 +447,7 @@ void* ExistConnCount(void *arg) {
  *	Returns:		void
  * *************/
 
-void udp_packet_decode(const struct pcap_pkthdr *h, const u_char *p,char *strid)
+void udp_packet_decode(const struct pcap_pkthdr *h, const u_char *p,uint16_t proid)
 {
 	const struct ip *ip;
 	const struct udphdr *udp;
@@ -246,91 +466,15 @@ void udp_packet_decode(const struct pcap_pkthdr *h, const u_char *p,char *strid)
 	sport = ntohs(udp->source);
 	dport = ntohs(udp->dest);
 
-	session_info *tmpinfo;
-	tmpinfo = (session_info*)calloc(1,sizeof(session_info));
-	if(!tmpinfo){
-		printf("Packetcallback swich UDP protocol calloc tmpinfo failed!%s(%d)\n",__FILE__,__LINE__);
-		return;
-	}
-	tmpinfo->srcip = srcip;
-	tmpinfo->dstip = dstip;
-	tmpinfo->srcport = sport;
-	tmpinfo->dstport = dport;
-	tmpinfo->ts = h->ts;
+	session_info tmpinfo;
+	memset(&tmpinfo,0,sizeof(session_info));
 
-	IPSession tmpipses;
-	memset(&tmpipses,0,sizeof(IPSession));
-	/* 源IP做key查询 */
-	if(ssm_get(UDPstatusMap,srcip,&tmpipses) != 1) {  /* 用源IP去UPD状态表里面查询,如果没有的话执行下面的语句块 */
-		tmpipses.sessions = (session_info*)calloc(INCR,sizeof(session_info));/* 给这个IP分配会话数组空间 可以封装*/
-		if(!tmpipses.sessions){
-			printf("Packetcallback swich UDP protocol calloc sessions failed!%s(%d)\n",__FILE__,__LINE__);
-			return;
-		}
-		tmpipses.sessions_flag = (int*)calloc(INCR,sizeof(int));
-		if(!tmpipses.sessions_flag){
-			printf("Packetcallback swich UDP protocol calloc sessions_flag failed!%s(%d)\n",__FILE__,__LINE__);
-			return;
-		}
+	tmpinfo.srcip = srcip;
+	tmpinfo.dstip = dstip;
+	tmpinfo.srcport = sport;
+	tmpinfo.dstport = dport;
+	tmpinfo.ts = h->ts;
 
-		tmpipses.capacity = INCR;//把当前的ip和这个ip的会话放入value,执行到最下面时将会把这个ip做key,然后把Value放入UDP状态哈希;
-		tmpipses.sessions[0] = *tmpinfo;
-		tmpipses.session_count++;
-		add_ipdata_pro(tmpinfo->srcip, h->caplen, atoi(strid), 0);//增加新链接计数
-		add_ipdata_pro(tmpinfo->dstip, h->caplen, atoi(strid), 1);
-
-	}else{  //找到了这个ip,说明这个ip已经存在了
-		if((tmpipses.session_count) == tmpipses.capacity) { //如果这个ip的会话数组已经满了,给它增长容量
-			tmpipses.sessions = (session_info*)realloc(tmpipses.sessions,tmpipses.session_count + INCR);
-			if(!tmpipses.sessions){
-				printf("Packetcallback swich UDP protocol realloc sessions failed!%s(%d)\n",__FILE__,__LINE__);
-				return;
-			}
-			tmpipses.sessions_flag = (int*)realloc(tmpipses.sessions_flag,tmpipses.session_count + INCR); 
-			if(!tmpipses.sessions_flag){
-				printf("Packetcallback swich UDP protocol realloc sessions_flag failed!%s(%d)\n",__FILE__,__LINE__);
-				return;
-			}
-			tmpipses.capacity += INCR;
-		}
-		int i;
-		int flag = 0;//找到这个四元组后置1
-		for(i = 0; i < tmpipses.session_count; i++) { //遍历这个ip的所有会话
-			if(!memcmp((tmpipses.sessions + i),tmpinfo,12)){//如果这个会话已经存在
-				flag = 1;
-				if((tmpinfo->ts.tv_sec - tmpipses.sessions[i].ts.tv_sec) > UDP_TIMEOUT) {     //超时,虽然找到了,但原来的连接状态已经超时了,这一个算新连接,把连接计数+1
-					add_ipdata_pro(tmpinfo->srcip, h->caplen, atoi(strid), 0);
-					add_ipdata_pro(tmpinfo->dstip, h->caplen, atoi(strid), 1);
-					tmpipses.sessions[i].ts.tv_sec = tmpinfo->ts.tv_sec;//这里是把时间更新
-				}else {//如果这个会话没有超时,那么把最新的时间记录下来
-					tmpipses.sessions[i].ts.tv_sec = tmpinfo->ts.tv_sec;//更新时间
-					add_ipdata_acc(tmpinfo->srcip,h->caplen,atoi(strid),0);//只增加访问次数
-					add_ipdata_acc(tmpinfo->dstip,h->caplen,atoi(strid),1);
-				}
-			}
-
-			}//遍历完
-			if(flag == 0) {//遍历完后没有找到,那么这是一个新的会话,把它放入这个IP的会话数组,把会话数加1
-				int i;
-				int flag = 0; /* 如果填补了超时链接的位置就置为1 */
-				for(i = 0; i < tmpipses.session_count; i++) /* 先寻找一下会话数组内有没有已经超时的链接 */
-				{
-					if(*(tmpipses.sessions_flag + i)) {
-						flag = 1;
-						break;
-					}
-				}
-				
-				tmpipses.sessions[i] = *tmpinfo;
-				tmpipses.sessions_flag[i] = 0;
-				if(!flag) /* 当没有填补时 */
-					tmpipses.session_count++;
-
-				add_ipdata_pro(tmpinfo->srcip,h->caplen,atoi(strid),0);
-				add_ipdata_pro(tmpinfo->dstip,h->caplen,atoi(strid),1);
-			}
-		}
-
-		ssm_put(UDPstatusMap,srcip,tmpipses);
-		free(tmpinfo);
+	add_session(tmpinfo.srcip,&tmpinfo,h->caplen,proid,0,UDPstatusMap);
+	add_session(tmpinfo.dstip,&tmpinfo,h->caplen,proid,0,UDPstatusMap);
 }
