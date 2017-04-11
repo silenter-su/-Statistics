@@ -243,7 +243,7 @@ char* intoaV4(unsigned int addr, char* buf, u_short bufLen)
 
 char file[256]; 
 	int filen;
-char *check_file()
+char *check_file() /* 文件访问控制,循环生成十分钟内的访问数据 */
 {
 	int i;
 	char istr[8];
@@ -377,15 +377,15 @@ void smint_iter(const StrintMap *map)
 				fprintf(fp, "%llu|", pair->value.stats[k].existconn);
 				fprintf(fp, "%llu|", pair->value.stats[k].accesstimes);
 				//add by njl
-				pair->value.stats[k].recvsize = 0;
-				pair->value.stats[k].sendsize = 0;
-				pair->value.stats[k].newconn = 0;
-				pair->value.stats[k].accesstimes = 0;
-				if(pair->value.stats[k].existconn == 0){
-					bucket->count -= 1;
-					memset(pair,0,sizeof(Pairint));
-					//free(pair);
-				}
+//				pair->value.stats[k].recvsize = 0;
+//				pair->value.stats[k].sendsize = 0;
+//				pair->value.stats[k].newconn = 0;
+//				pair->value.stats[k].accesstimes = 0;
+//				if(pair->value.stats[k].existconn == 0){
+//					bucket->count -= 1;
+//					memset(pair,0,sizeof(Pairint));
+//					//free(pair);
+//				}
 				//fprintf(fp, "%s", pname);
 
 				/*for debug*/
@@ -485,13 +485,13 @@ void PacketCallback(u_char *user, const struct pcap_pkthdr *h, const u_char *p)
 		case 17:
 			if (sm_get(proIdMap, "udp", strid, sizeof(strid)) ==1) {
 				// todo: 
-				udp_packet_decode(h,p);
+				udp_packet_decode(h,p,strid);
 			}
 			break;
 		case 1: 
 			if (sm_get(proIdMap, "icmp", strid, sizeof(strid)) ==1) {
 				//todo:
-				icmp_packet_decode(h,p);
+				icmp_packet_decode(h,p,strid);
 			}
 			break;
 		default:
@@ -583,17 +583,22 @@ int main(int argc, char **argv)
 	pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_DETACHED);
 
 
+	char strid[8] = { 0 };
 	if (pthread_create(&pth_id, NULL, (void*)write_stats, NULL) != 0) {
 		printf("create thread error!%s(%d)\n",__FILE__,__LINE__);
 		return -1;
 	}
-	if (pthread_create(&udp_exist_conn,&attr,ExistConnCount, "udp") != 0) {
-		printf("create ExistConnCount error!%s(%d)\n",__FILE__,__LINE__);
-		return -1;
+	if (sm_get(proIdMap, "udp", strid, sizeof(strid)) ==1) {
+		if (pthread_create(&udp_exist_conn,&attr,ExistConnCount, "udp") != 0) {
+			printf("create ExistConnCount error!%s(%d)\n",__FILE__,__LINE__);
+			return -1;
+		}
 	}
-	if (pthread_create(&icmp_exist_conn,&attr,ExistConnCount, "icmp") != 0) {
-		printf("create ExistConnCount error!%s(%d)\n",__FILE__,__LINE__);
-		return -1;
+	if (sm_get(proIdMap, "icmp", strid, sizeof(strid)) ==1) {
+		if (pthread_create(&icmp_exist_conn,&attr,ExistConnCount, "icmp") != 0) {
+			printf("create ExistConnCount error!%s(%d)\n",__FILE__,__LINE__);
+			return -1;
+		}
 	}
 
 	struct bpf_program fcode;

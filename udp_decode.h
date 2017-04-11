@@ -25,6 +25,6 @@ void  add_ipdata_acc(u_int32_t ip, u_int64_t size, u_int16_t protoid, int flag);
 void  add_ipdata_exist_num(u_int32_t ip, u_int16_t protoid,unsigned int exist_num);
 void  SetExistconn(unsigned int key,IPSession value,const void *obj);
 void* ExistConnCount(void *arg);
-void  udp_packet_decode(const struct pcap_pkthdr *h,const u_char *p);
+void  udp_packet_decode(const struct pcap_pkthdr *h,const u_char *p,char *strid);
 
 #endif

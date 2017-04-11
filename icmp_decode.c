@@ -26,12 +26,11 @@ extern SessionMap *ICMPstatusMap;
  *	Returns:		void
  * *************/
 
-void icmp_packet_decode(const struct pcap_pkthdr *h, const u_char *p)
+void icmp_packet_decode(const struct pcap_pkthdr *h, const u_char *p,char *strid)
 {
 	const struct ip *ip;
 	const struct icmphdr *icmp;
 	uint32_t srcip,dstip;
-	char strid[8];
 
 	ip = (const struct ip *)(p+IP_OFFSET);
 	uint64_t size;
@@ -101,6 +100,7 @@ void icmp_packet_decode(const struct pcap_pkthdr *h, const u_char *p)
 					add_ipdata_acc(tmpinfo->srcip,h->caplen,atoi(strid),0);//只增加访问次数
 					add_ipdata_acc(tmpinfo->dstip,h->caplen,atoi(strid),1);
 				}
+				break;
 			}
 
 			}//遍历完

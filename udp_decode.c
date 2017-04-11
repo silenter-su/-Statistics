@@ -14,6 +14,7 @@ extern StrMap *ipPortMap;
 extern StrintMap *ipdataMap;
 extern SessionMap *UDPstatusMap;
 extern SessionMap *ICMPstatusMap;
+time_t timev;
 
 /*************
  * Function:		add_ipdata_pro
@@ -176,18 +177,29 @@ void SetExistconn(unsigned int key,IPSession value,const void *obj)
  *		arg		当前协议	
  *	Returns:		void
  * *************/
-
 void* ExistConnCount(void *arg) {
-	char *str = (char*)arg;
-	int i = 0;
-	printf("In function ExistconnCount! Now protocol is %s ,%s(%d)\n",arg,__FILE__,__LINE__);
 	while(1){
+		usleep(10000);
+		timev = time(NULL);
+		if (timev%57 != 0)
+		  continue;
+
+		char *str = (char*)arg;
+		int i = 0;
+		printf("In function ExistconnCount! Now protocol is %s ,%s(%d)\n",arg,__FILE__,__LINE__);
 		i++;
 		printf("In loop of ExistConnCount,now is loop %d!Now protocol is %s\n",i,arg);
-		sleep(UDP_TIME);
 		int ret = 0;
-		if(!(ret = ssm_enum(UDPstatusMap,SetExistconn,arg))){
-			printf("SetExistconn error!\n");
+		char *protocol = (char*)arg;
+		if(strstr(protocol,"udp")){
+			if(!(ret = ssm_enum(UDPstatusMap,SetExistconn,arg))){
+				printf("SetExistconn error!\n");
+			}
+		}
+		if(strstr(protocol,"icmp")){
+			if(!(ret = ssm_enum(ICMPstatusMap,SetExistconn,arg))){
+				printf("SetExistconn error!\n");
+			}
 		}
 		/* 查看目前UDP哈希表占用多少内存,如果超过范围,就将哈希表删除,重新建立哈希表 */
 		int pairnum = 0;
@@ -201,7 +213,7 @@ void* ExistConnCount(void *arg) {
 			ssm_delete(ICMPstatusMap); /* 此处要加锁 */
 			ICMPstatusMap =  ssm_new(DETECTED_PROTO_NUM); 
 		}	
-
+		sleep(60);
 	}
 }
 
@@ -215,13 +227,12 @@ void* ExistConnCount(void *arg) {
  *	Returns:		void
  * *************/
 
-void udp_packet_decode(const struct pcap_pkthdr *h, const u_char *p)
+void udp_packet_decode(const struct pcap_pkthdr *h, const u_char *p,char *strid)
 {
 	const struct ip *ip;
 	const struct udphdr *udp;
 	uint16_t sport,dport;
 	uint32_t srcip,dstip;
-	char strid[8];
 
 	ip = (const struct ip *)(p+IP_OFFSET);
 	uint64_t size;
