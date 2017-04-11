@@ -4,6 +4,6 @@
 #include <pcap.h>
 #include "udp_decode.h"
 
-void icmp_packet_decode(const struct pcap_pkthdr *h,const u_char *p,char *strid);
+void icmp_packet_decode(const struct pcap_pkthdr *h,const u_char *p,uint16_t strid);
 
 #endif

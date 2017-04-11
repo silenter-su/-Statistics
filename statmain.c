@@ -291,7 +291,6 @@ char *check_file() /* 文件访问控制,循环生成十分钟内的访问数据
 	return file;
 }
 
-int aaa = 0;
 void smint_iter(const StrintMap *map)
 {
 	check_file();
@@ -360,11 +359,10 @@ void smint_iter(const StrintMap *map)
 				//if (sm_exists());
 				//if (pair->value.stats[k].protoid == 0) { 苏明刚注释
 				if (k == 0) {
-					fprintf(fp, "%llu []|", pair->value.stats[k].recvsize);
-					fprintf(fp, "%llu []|", pair->value.stats[k].sendsize);
-					fprintf(fp, "%llu []|", pair->value.stats[k].newconn);
-					fprintf(fp, "%llu []|", pair->value.stats[k].existconn);
-					aaa++;
+					fprintf(fp, "%llu *|", pair->value.stats[k].recvsize);
+					fprintf(fp, "%llu *|", pair->value.stats[k].sendsize);
+					fprintf(fp, "%llu *|", pair->value.stats[k].newconn);
+					fprintf(fp, "%llu *|", pair->value.stats[k].existconn);
 					//add by njl
 					//pair->value.stats[k].recvsize = 0;
 					//pair->value.stats[k].sendsize = 0;
@@ -380,10 +378,11 @@ void smint_iter(const StrintMap *map)
 				fprintf(fp, "%llu exis|", pair->value.stats[k].existconn);
 				fprintf(fp, "%llu acce|", pair->value.stats[k].accesstimes);
 				//add by njl
-//				pair->value.stats[k].recvsize = 0;
-//				pair->value.stats[k].sendsize = 0;
-//				pair->value.stats[k].newconn = 0;
-//				pair->value.stats[k].accesstimes = 0;
+				pair->value.stats[k].recvsize = 0;
+				pair->value.stats[k].sendsize = 0;
+				pair->value.stats[k].newconn = 0;
+				pair->value.stats[k].accesstimes = 0;
+				pair->value.stats[k].existconn = 0;
 //				if(pair->value.stats[k].existconn == 0){
 //					bucket->count -= 1;
 //					memset(pair,0,sizeof(Pairint));
@@ -408,20 +407,27 @@ void smint_iter(const StrintMap *map)
 		bucket++;
 		i++;
 	}
-	fprintf(fp,"%d\n",aaa);
 	fclose(fp);
-	aaa = 0;
 	return ;
 }
 
 void *write_stats(void *data) 
 {
+	char strid[8] = { 0 };
 	while (1) {
 		usleep(10000);
 		timev = time(NULL);
 		if (timev%60 !=  0)
 			continue;
 		gflag = 1;
+
+		if (sm_get(proIdMap, "udp", strid, sizeof(strid)) ==1) {                      
+			ExistConnCount("udp");
+		}                                                                         
+		if (sm_get(proIdMap, "icmp", strid, sizeof(strid)) ==1) {                     
+			ExistConnCount("icmp");
+		}                                                                         
+
 		smint_iter(ipdataMap);
 		sleep(60);
 	}
@@ -496,7 +502,7 @@ void PacketCallback(u_char *user, const struct pcap_pkthdr *h, const u_char *p)
 		case 1: 
 			if (sm_get(proIdMap, "icmp", strid, sizeof(strid)) ==1) {
 				//todo:
-				//icmp_packet_decode(h,p,strid);
+				icmp_packet_decode(h,p,atoi(strid));
 			}
 			break;
 		default:
@@ -593,18 +599,18 @@ int main(int argc, char **argv)
 		printf("create thread error!%s(%d)\n",__FILE__,__LINE__);
 		return -1;
 	}
-	if (sm_get(proIdMap, "udp", strid, sizeof(strid)) ==1) {
-		if (pthread_create(&udp_exist_conn,&attr,ExistConnCount, "udp") != 0) {
-			printf("create ExistConnCount error!%s(%d)\n",__FILE__,__LINE__);
-			return -1;
-		}
-	}
-	if (sm_get(proIdMap, "icmp", strid, sizeof(strid)) ==1) {
-		if (pthread_create(&icmp_exist_conn,&attr,ExistConnCount, "icmp") != 0) {
-			printf("create ExistConnCount error!%s(%d)\n",__FILE__,__LINE__);
-			return -1;
-		}
-	}
+//	if (sm_get(proIdMap, "udp", strid, sizeof(strid)) ==1) {
+//		if (pthread_create(&udp_exist_conn,&attr,ExistConnCount, "udp") != 0) {
+//			printf("create ExistConnCount error!%s(%d)\n",__FILE__,__LINE__);
+//			return -1;
+//		}
+//	}
+//	if (sm_get(proIdMap, "icmp", strid, sizeof(strid)) ==1) {
+//		if (pthread_create(&icmp_exist_conn,&attr,ExistConnCount, "icmp") != 0) {
+//			printf("create ExistConnCount error!%s(%d)\n",__FILE__,__LINE__);
+//			return -1;
+//		}
+//	}
 
 	struct bpf_program fcode;
 	u_char *pcap_userdata = 0;

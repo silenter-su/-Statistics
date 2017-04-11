@@ -143,126 +143,6 @@ void  add_session(uint32_t ip,session_info *info,uint64_t len,uint16_t protoid,i
 	ssm_put(map,ip,tmpipses);
 	return;
 }
-#if 0
-/*************
- * Function:		add_ipdata_pro
- * Description:		
- *		增加IPData表中相应协议的计数.
- *	Parameters:
- *		ip		当前ip.
- *		size	当前数据帧大小.
- *		protoid	当前协议.
- *		flag	标识源ip还是目的ip.
- *	Returns:	void.
- * ***********/
-void  add_ipdata_pro(u_int32_t ip, u_int64_t size, u_int16_t protoid, int flag)
-{
-	struct IPData ipstats;
-	memset(&ipstats, 0, sizeof(struct IPData));
-
-	if (smint_get(ipdataMap, ip, &ipstats) != 1) {
-		if (flag == 0) {
-			ipstats.stats[protoid].sendsize += size;
-			ipstats.stats[protoid].newconn ++;
-			ipstats.stats[protoid].accesstimes ++;
-		}
-		if (flag == 1) {
-			ipstats.stats[protoid].recvsize += size;
-			ipstats.stats[protoid].newconn ++;
-			ipstats.stats[protoid].accesstimes ++;
-		}
-	} else {
-		if (flag == 0) {
-			ipstats.stats[protoid].sendsize += size;
-			ipstats.stats[protoid].accesstimes++;
-		}
-		if (flag == 1) {
-			ipstats.stats[protoid].recvsize += size;
-			ipstats.stats[protoid].accesstimes ++;
-		}
-
-	}
-	ipstats.stats[protoid].protoid = protoid;
-
-	smint_put(ipdataMap, ip, ipstats); 
-
-	return ;
-}
-
-/**************
- *	Function:		add_ipdata_acc
- *	Description:
- *		增加ipdata中ip的访问次数.
- *	Parameters:
- *		ip		当前ip.
- *		size	当前数据帧大小.
- *		protoid	当前协议id号.
- *		flag	区分源ip目的ip.
- *	Returns:		void
- * *************/
-
-void  add_ipdata_acc(u_int32_t ip, u_int64_t size, u_int16_t protoid, int flag)
-{
-	struct IPData ipstats;
-	memset(&ipstats, 0, sizeof(struct IPData));
-
-	if (smint_get(ipdataMap, ip, &ipstats) != 1) {
-		if (flag == 0) {
-			ipstats.stats[protoid].sendsize += size;
-			ipstats.stats[protoid].accesstimes ++;
-		}
-		if (flag == 1) {
-			ipstats.stats[protoid].recvsize += size;
-			ipstats.stats[protoid].accesstimes ++;
-		}
-	} else {
-		if (flag == 0) {
-			ipstats.stats[protoid].sendsize += size;
-			ipstats.stats[protoid].accesstimes++;
-		}
-		if (flag == 1) {
-			ipstats.stats[protoid].recvsize += size;
-			ipstats.stats[protoid].accesstimes ++;
-		}
-
-	}
-	ipstats.stats[protoid].protoid = protoid;
-	smint_put(ipdataMap, ip, ipstats); 
-	return ;
-}
-
-/**************
- *	Function:		add_ipdata_exist_num	
- *	Description:
- *		设置IPData当前ip的已存在链接数.
- *	Parameters:
- *		ip			源IP.
- *		protoid		解析后的协议号(stats[]数组下标).
- *		exit_num	已存在的链接数.
- *	Returns:		void
- * *************/
-
-void  add_ipdata_exist_num(u_int32_t ip, u_int16_t protoid,unsigned int exist_num)
-{
-	struct IPData ipstats;
-	memset(&ipstats, 0, sizeof(struct IPData));
-	if (smint_get(ipdataMap, ip, &ipstats)) {
-		ipstats.stats[protoid].existconn = exist_num;
-		struct in_addr cip;
-		memset(&cip,0,sizeof(struct in_addr));
-		cip.s_addr = ntohl(ip);
-		
-		char tmp[8] = { 0 };
-		char pname[8] = { 0 };
-		sprintf(tmp, "%d", protoid);
-		sm_get(idProMap, tmp, pname, sizeof(pname));
-		printf("Now IP:%s exist %s connction number is %d!\n",inet_ntoa(cip),pname,exist_num);
-		smint_put(ipdataMap,ip,ipstats);
-	
-	}
-	return ;
-}
-#endif
 
 /**************
  *	Function:	ClearValue	
@@ -331,7 +211,7 @@ void GetExistconn(unsigned int key,IPSession value,const void *obj)
 	gettimeofday(&tv,NULL);
 
 	for(i = 0; i < value.session_count; i++){
-		print_value(&value,i);
+		//print_value(&value,i);
 		if((tv.tv_sec - value.sessions[i].ts.tv_sec) < TIMEOUT){
 			exist_num++;
 		} else {
@@ -393,17 +273,8 @@ void GetExistconn(unsigned int key,IPSession value,const void *obj)
  *	Returns:		void
  * *************/
 void* ExistConnCount(void *arg) {
-	while(1){
-		usleep(10000);
-		timev = time(NULL);
-		if (timev%57 != 0)
-		  continue;
 
 		char *str = (char*)arg;
-		int i = 0;
-		printf("In function ExistconnCount! Now protocol is %s ,%s(%d)\n",arg,__FILE__,__LINE__);
-		i++;
-		printf("In loop of ExistConnCount,now is loop %d!Now protocol is %s\n",i,arg);
 		int ret = 0;
 		char *protocol = (char*)arg;
 		if(strstr(protocol,"udp")){
@@ -437,9 +308,6 @@ void* ExistConnCount(void *arg) {
 			ssm_delete(ICMPstatusMap); 
 			ICMPstatusMap =  ssm_new(DETECTED_PROTO_NUM); 
 		}	
-		sleep(60);
-
-	}
 }
 
 /**************
